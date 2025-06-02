@@ -87,8 +87,20 @@ with tab3:
 with tab4:
     st.subheader("🔮 Prediksi Harga Motor")
     if st.button("Prediksi Sekarang"):
-        harga = model.predict(input_encoded)[0]
-        st.success(f"💰 Perkiraan Harga: Rp {harga:,.0f}")
+    harga = model.predict(input_encoded)[0]
+    st.success(f"💰 Perkiraan Harga: Rp {harga:,.0f}")
+
+    # Simpan log ke CSV
+    hasil_log = input_df.copy()
+    hasil_log["predicted_price"] = harga
+    try:
+        existing = pd.read_csv("riwayat_prediksi.csv")
+        hasil_log = pd.concat([existing, hasil_log], ignore_index=True)
+    except FileNotFoundError:
+        pass
+    hasil_log.to_csv("riwayat_prediksi.csv", index=False)
+    st.info("✅ Data prediksi telah disimpan ke riwayat_prediksi.csv")
+
 
 st.markdown("---")
-st.caption("Dibuat dengan ❤️ oleh Beb di Streamlit 🚀")
+st.caption("Dibuat dengan ❤️ oleh Akbar di Streamlit 🚀")
