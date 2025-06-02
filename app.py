@@ -21,7 +21,7 @@ def load_data():
 df = load_data()
 
 # =========================
-# Label Encoding per kolom
+# Label Encoding
 # =========================
 df_encoded = df.copy()
 encoders = {}
@@ -30,9 +30,6 @@ for col in ['brand', 'model', 'condition']:
     df_encoded[col] = le.fit_transform(df[col])
     encoders[col] = le
 
-# =========================
-# Training Model
-# =========================
 X = df_encoded.drop('price', axis=1)
 y = df_encoded['price']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -43,7 +40,7 @@ y_pred = model.predict(X_test)
 mae = mean_absolute_error(y_test, y_pred)
 
 # =========================
-# SIDEBAR INPUT
+# Sidebar Input
 # =========================
 st.sidebar.header("🛠️ Input Data Motor")
 brand = st.sidebar.selectbox("Merek", df['brand'].unique())
@@ -67,19 +64,28 @@ for col in ['brand', 'model', 'condition']:
     input_encoded[col] = encoders[col].transform(input_encoded[col])
 
 # =========================
-# GAMBAR MOTOR OTOMATIS
+# Gambar Otomatis + Fallback
 # =========================
 model_slug = model_motor.lower().replace(" ", "")
-img_path = f"images/{model_slug}.jpg"
+img_paths = [
+    f"images/{model_slug}.jpg",
+    f"images/{model_slug}.jpeg",
+    f"images/{model_slug}.png"
+]
 
-with st.sidebar:
-    if os.path.exists(img_path):
-        st.image(img_path, caption=f"{model_motor}", use_column_width=True)
-    else:
-        st.info("📷 Gambar belum tersedia untuk model ini.")
+img_path = None
+for path in img_paths:
+    if os.path.exists(path):
+        img_path = path
+        break
+
+if not img_path:
+    img_path = "images/default.jpg"
+
+st.sidebar.image(img_path, caption=f"Gambar: {model_motor}", use_column_width=True)
 
 # =========================
-# TAB TAMPILAN
+# Tabs
 # =========================
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Data", "📈 Evaluasi", "📉 Visualisasi", "🔮 Prediksi"])
 
@@ -100,8 +106,7 @@ with tab3:
 
 with tab4:
     st.subheader("🔮 Prediksi Harga Motor")
-    if os.path.exists(img_path):
-        st.image(img_path, width=300, caption=f"Gambar {model_motor}")
+    st.image(img_path, width=300, caption=f"Gambar: {model_motor}")
 
     if st.button("Prediksi Sekarang"):
         harga = model.predict(input_encoded)[0]
@@ -115,11 +120,10 @@ with tab4:
             hasil_log = pd.concat([existing, hasil_log], ignore_index=True)
         except FileNotFoundError:
             pass
-
         hasil_log.to_csv("riwayat_prediksi.csv", index=False)
         st.info("✅ Data prediksi telah disimpan ke riwayat_prediksi.csv")
 
-        # WhatsApp Message
+        # Kirim ke WhatsApp
         pesan = f"""Halo Admin, saya ingin menanyakan harga motor bekas:
 
 📌 Merek: {brand}
@@ -134,7 +138,7 @@ with tab4:
 Dikirim dari aplikasi Prediksi Harga Motor Beb.
 """
         encoded_message = urllib.parse.quote(pesan)
-        no_wa = "6282124306742"  # Ganti dengan nomor WhatsApp kamu
+        no_wa = "6282124306742"  # Ganti dengan nomor kamu
         wa_link = f"https://wa.me/{no_wa}?text={encoded_message}"
 
         st.markdown(f"""
@@ -146,4 +150,4 @@ Dikirim dari aplikasi Prediksi Harga Motor Beb.
         """, unsafe_allow_html=True)
 
 st.markdown("---")
-st.caption("🚀 Dibuat dengan ❤️ oleh Bos Beb di Streamlit")
+st.caption("🚀 Dibuat dengan ❤️ oleh Bos Beb")
