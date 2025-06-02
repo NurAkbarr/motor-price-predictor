@@ -98,8 +98,10 @@ with tab4:
         hasil_log = pd.concat([existing, hasil_log], ignore_index=True)
     except FileNotFoundError:
         pass
+
     hasil_log.to_csv("riwayat_prediksi.csv", index=False)
     st.info("✅ Data prediksi telah disimpan ke riwayat_prediksi.csv")
+
 
 
 st.markdown("---")
