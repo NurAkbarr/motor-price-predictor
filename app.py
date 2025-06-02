@@ -82,7 +82,7 @@ for path in img_paths:
 if not img_path:
     img_path = "images/default.jpg"
 
-st.sidebar.image(img_path, caption=f"Gambar: {model_motor}", use_column_width=True)
+st.sidebar.image(img_path, caption=f"Gambar: {model_motor}", use_container_width=True)
 
 # =========================
 # Tabs
@@ -106,7 +106,7 @@ with tab3:
 
 with tab4:
     st.subheader("🔮 Prediksi Harga Motor")
-    st.image(img_path, width=300, caption=f"Gambar: {model_motor}")
+    st.image(img_path, caption=f"Gambar: {model_motor}", use_container_width=True)
 
     if st.button("Prediksi Sekarang"):
         harga = model.predict(input_encoded)[0]
@@ -123,7 +123,7 @@ with tab4:
         hasil_log.to_csv("riwayat_prediksi.csv", index=False)
         st.info("✅ Data prediksi telah disimpan ke riwayat_prediksi.csv")
 
-        # Kirim ke WhatsApp
+        # WhatsApp Message
         pesan = f"""Halo Admin, saya ingin menanyakan harga motor bekas:
 
 📌 Merek: {brand}
@@ -138,7 +138,7 @@ with tab4:
 Dikirim dari aplikasi Prediksi Harga Motor Beb.
 """
         encoded_message = urllib.parse.quote(pesan)
-        no_wa = "6282124306742"  # Ganti dengan nomor kamu
+        no_wa = "6281234567890"  # Ganti dengan nomor WhatsApp kamu
         wa_link = f"https://wa.me/{no_wa}?text={encoded_message}"
 
         st.markdown(f"""
@@ -150,4 +150,4 @@ Dikirim dari aplikasi Prediksi Harga Motor Beb.
         """, unsafe_allow_html=True)
 
 st.markdown("---")
-st.caption("🚀 Dibuat dengan ❤️ oleh Bos Beb")
+st.caption("🚀 Dibuat dengan ❤️ oleh Papah Udin x Mamah Jaki with Akbar Junior")
