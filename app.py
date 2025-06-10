@@ -12,6 +12,12 @@ import seaborn as sns
 st.set_page_config(page_title="Prediksi Harga Motor", layout="wide")
 
 # =========================
+# Pastikan folder images/ ada
+# =========================
+if not os.path.exists("images"):
+    os.makedirs("images")
+
+# =========================
 # Sidebar Upload Section
 # =========================
 st.sidebar.markdown("## 🔧 Manajemen Data")
@@ -23,27 +29,19 @@ if uploaded_csv is not None:
         new_df = pd.read_csv(uploaded_csv)
         new_df.to_csv("motor.csv", index=False)
         st.sidebar.success("✅ Dataset motor berhasil diunggah!")
-        st.rerun()  # force reload page & cache
+        st.rerun()
     except Exception as e:
         st.sidebar.error(f"❌ Gagal upload: {e}")
 
-# Upload Gambar
-uploaded_image = st.sidebar.file_uploader("🖼️ Upload gambar motor", type=["jpg", "jpeg", "png"])
-if uploaded_image is not None:
-    file_name = uploaded_image.name.lower().replace(" ", "")
-    file_path = os.path.join("images", file_name)
-    with open(file_path, "wb") as f:
-        f.write(uploaded_image.read())
-    st.sidebar.success(f"✅ Gambar disimpan sebagai: {file_name}")
-
 # =========================
-# Load & Encode Dataset (No Cache)
+# Load Dataset
 # =========================
 def load_data():
     return pd.read_csv("motor.csv")
 
 df = load_data()
 
+# Encode kolom kategori
 df_encoded = df.copy()
 encoders = {}
 for col in ['brand', 'model', 'condition']:
@@ -51,17 +49,17 @@ for col in ['brand', 'model', 'condition']:
     df_encoded[col] = le.fit_transform(df[col])
     encoders[col] = le
 
+# Train model
 X = df_encoded.drop('price', axis=1)
 y = df_encoded['price']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
 model = RandomForestRegressor()
 model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 mae = mean_absolute_error(y_test, y_pred)
 
 # =========================
-# Sidebar Input User
+# Input Sidebar
 # =========================
 st.sidebar.header("🛠️ Input Data Motor")
 brand = st.sidebar.selectbox("Merek", df['brand'].unique())
@@ -80,12 +78,29 @@ input_df = pd.DataFrame([{
     "condition": condition
 }])
 
+# Encode input
 input_encoded = input_df.copy()
 for col in ['brand', 'model', 'condition']:
     input_encoded[col] = encoders[col].transform(input_encoded[col])
 
 # =========================
-# Gambar Otomatis
+# Upload Gambar (otomatis sesuai model_motor)
+# =========================
+uploaded_image = st.sidebar.file_uploader("🖼️ Upload gambar motor", type=["jpg", "jpeg", "png"])
+if uploaded_image is not None:
+    model_slug = model_motor.lower().replace(" ", "")
+    ext = os.path.splitext(uploaded_image.name)[1].lower()
+    file_name = f"{model_slug}{ext}"
+    file_path = os.path.join("images", file_name)
+
+    with open(file_path, "wb") as f:
+        f.write(uploaded_image.read())
+
+    st.sidebar.success(f"✅ Gambar disimpan sebagai: {file_name}")
+    st.sidebar.image(file_path, caption="Preview Gambar", use_container_width=True)
+
+# =========================
+# Cari Gambar Motor
 # =========================
 model_slug = model_motor.lower().replace(" ", "")
 img_paths = [
@@ -93,13 +108,10 @@ img_paths = [
     f"images/{model_slug}.jpeg",
     f"images/{model_slug}.png"
 ]
-
-img_path = next((path for path in img_paths if os.path.exists(path)), "images/default.jpg")
-
-st.sidebar.image(img_path, caption=f"Gambar: {model_motor}", use_container_width=True)
+img_path = next((p for p in img_paths if os.path.exists(p)), "images/default.jpg")
 
 # =========================
-# Tabs Layout
+# Tabs Tampilan
 # =========================
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📊 Data", "📈 Evaluasi", "📉 Visualisasi", "🔮 Prediksi", "🗂️ Riwayat"
@@ -136,6 +148,7 @@ with tab4:
         except FileNotFoundError:
             pass
         hasil_log.to_csv("riwayat_prediksi.csv", index=False)
+
         st.info("✅ Data prediksi telah disimpan ke riwayat_prediksi.csv")
 
         # WhatsApp
