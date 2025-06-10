@@ -18,18 +18,17 @@ if not os.path.exists("images"):
     os.makedirs("images")
 
 # =========================
-# Sidebar Upload Section
+# Sidebar Upload CSV
 # =========================
 st.sidebar.markdown("## 🔧 Manajemen Data")
 
-# Upload CSV Motor
 uploaded_csv = st.sidebar.file_uploader("📄 Upload file CSV motor", type=["csv"])
 if uploaded_csv is not None:
     try:
         new_df = pd.read_csv(uploaded_csv)
         new_df.to_csv("motor.csv", index=False)
-        st.sidebar.success("✅ Dataset motor berhasil diunggah!")
-        st.rerun()
+        st.sidebar.success("✅ Dataset motor berhasil diunggah! Silakan refresh halaman.")
+        st.stop()  # stop agar tidak render ke bawah dulu
     except Exception as e:
         st.sidebar.error(f"❌ Gagal upload: {e}")
 
@@ -41,7 +40,9 @@ def load_data():
 
 df = load_data()
 
-# Encode kolom kategori
+# =========================
+# Encode Kolom Kategori
+# =========================
 df_encoded = df.copy()
 encoders = {}
 for col in ['brand', 'model', 'condition']:
@@ -84,7 +85,7 @@ for col in ['brand', 'model', 'condition']:
     input_encoded[col] = encoders[col].transform(input_encoded[col])
 
 # =========================
-# Upload Gambar (otomatis sesuai model_motor)
+# Upload Gambar Motor
 # =========================
 uploaded_image = st.sidebar.file_uploader("🖼️ Upload gambar motor", type=["jpg", "jpeg", "png"])
 if uploaded_image is not None:
@@ -93,14 +94,20 @@ if uploaded_image is not None:
     file_name = f"{model_slug}{ext}"
     file_path = os.path.join("images", file_name)
 
-    with open(file_path, "wb") as f:
-        f.write(uploaded_image.read())
+    try:
+        with open(file_path, "wb") as f:
+            f.write(uploaded_image.read())
+        st.sidebar.success(f"✅ Gambar disimpan sebagai: {file_name}")
 
-    st.sidebar.success(f"✅ Gambar disimpan sebagai: {file_name}")
-    st.sidebar.image(file_path, caption="Preview Gambar", use_container_width=True)
+        if os.path.exists(file_path):
+            st.sidebar.image(file_path, caption="Preview Gambar", use_container_width=True)
+        else:
+            st.sidebar.warning("❌ Gambar gagal ditampilkan.")
+    except Exception as e:
+        st.sidebar.error(f"❌ Gagal menyimpan gambar: {e}")
 
 # =========================
-# Cari Gambar Motor
+# Cari Gambar Berdasarkan Model
 # =========================
 model_slug = model_motor.lower().replace(" ", "")
 img_paths = [
@@ -134,7 +141,10 @@ with tab3:
 
 with tab4:
     st.subheader("🔮 Prediksi Harga Motor")
-    st.image(img_path, caption=f"Gambar: {model_motor}", use_container_width=True)
+    if os.path.exists(img_path):
+        st.image(img_path, caption=f"Gambar: {model_motor}", use_container_width=True)
+    else:
+        st.warning("📷 Gambar tidak tersedia.")
 
     if st.button("Prediksi Sekarang"):
         harga = model.predict(input_encoded)[0]
@@ -148,10 +158,9 @@ with tab4:
         except FileNotFoundError:
             pass
         hasil_log.to_csv("riwayat_prediksi.csv", index=False)
-
         st.info("✅ Data prediksi telah disimpan ke riwayat_prediksi.csv")
 
-        # WhatsApp
+        # WhatsApp link
         pesan = f"""Halo Admin, saya ingin menanyakan harga motor bekas:
 
 📌 Merek: {brand}
@@ -185,4 +194,4 @@ with tab5:
         st.warning("Belum ada riwayat prediksi.")
 
 st.markdown("---")
-st.caption("🚀 Dibuat dengan ❤️ oleh Bos Beb")
+st.caption("🚀 Dibuat dengan ❤️ oleh Beb")
