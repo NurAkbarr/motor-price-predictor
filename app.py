@@ -23,7 +23,7 @@ if uploaded_csv is not None:
         new_df = pd.read_csv(uploaded_csv)
         new_df.to_csv("motor.csv", index=False)
         st.sidebar.success("✅ Dataset motor berhasil diunggah!")
-        st.rerun()
+        st.rerun()  # force reload page & cache
     except Exception as e:
         st.sidebar.error(f"❌ Gagal upload: {e}")
 
@@ -37,9 +37,8 @@ if uploaded_image is not None:
     st.sidebar.success(f"✅ Gambar disimpan sebagai: {file_name}")
 
 # =========================
-# Load & Encode Dataset
+# Load & Encode Dataset (No Cache)
 # =========================
-@st.cache_data
 def load_data():
     return pd.read_csv("motor.csv")
 
@@ -95,14 +94,7 @@ img_paths = [
     f"images/{model_slug}.png"
 ]
 
-img_path = None
-for path in img_paths:
-    if os.path.exists(path):
-        img_path = path
-        break
-
-if not img_path:
-    img_path = "images/default.jpg"
+img_path = next((path for path in img_paths if os.path.exists(path)), "images/default.jpg")
 
 st.sidebar.image(img_path, caption=f"Gambar: {model_motor}", use_container_width=True)
 
