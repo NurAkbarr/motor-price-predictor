@@ -12,7 +12,32 @@ import seaborn as sns
 st.set_page_config(page_title="Prediksi Harga Motor", layout="wide")
 
 # =========================
-# Load Data
+# Sidebar Upload Section
+# =========================
+st.sidebar.markdown("## 🔧 Manajemen Data")
+
+# Upload CSV Motor
+uploaded_csv = st.sidebar.file_uploader("📄 Upload file CSV motor", type=["csv"])
+if uploaded_csv is not None:
+    try:
+        new_df = pd.read_csv(uploaded_csv)
+        new_df.to_csv("motor.csv", index=False)
+        st.sidebar.success("✅ Dataset motor berhasil diunggah!")
+        st.rerun()
+    except Exception as e:
+        st.sidebar.error(f"❌ Gagal upload: {e}")
+
+# Upload Gambar
+uploaded_image = st.sidebar.file_uploader("🖼️ Upload gambar motor", type=["jpg", "jpeg", "png"])
+if uploaded_image is not None:
+    file_name = uploaded_image.name.lower().replace(" ", "")
+    file_path = os.path.join("images", file_name)
+    with open(file_path, "wb") as f:
+        f.write(uploaded_image.read())
+    st.sidebar.success(f"✅ Gambar disimpan sebagai: {file_name}")
+
+# =========================
+# Load & Encode Dataset
 # =========================
 @st.cache_data
 def load_data():
@@ -20,9 +45,6 @@ def load_data():
 
 df = load_data()
 
-# =========================
-# Label Encoding
-# =========================
 df_encoded = df.copy()
 encoders = {}
 for col in ['brand', 'model', 'condition']:
@@ -40,7 +62,7 @@ y_pred = model.predict(X_test)
 mae = mean_absolute_error(y_test, y_pred)
 
 # =========================
-# Sidebar Input
+# Sidebar Input User
 # =========================
 st.sidebar.header("🛠️ Input Data Motor")
 brand = st.sidebar.selectbox("Merek", df['brand'].unique())
@@ -64,7 +86,7 @@ for col in ['brand', 'model', 'condition']:
     input_encoded[col] = encoders[col].transform(input_encoded[col])
 
 # =========================
-# Gambar Otomatis + Fallback
+# Gambar Otomatis
 # =========================
 model_slug = model_motor.lower().replace(" ", "")
 img_paths = [
@@ -85,9 +107,11 @@ if not img_path:
 st.sidebar.image(img_path, caption=f"Gambar: {model_motor}", use_container_width=True)
 
 # =========================
-# Tabs
+# Tabs Layout
 # =========================
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Data", "📈 Evaluasi", "📉 Visualisasi", "🔮 Prediksi"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📊 Data", "📈 Evaluasi", "📉 Visualisasi", "🔮 Prediksi", "🗂️ Riwayat"
+])
 
 with tab1:
     st.subheader("📋 Dataset Motor Bekas")
@@ -112,7 +136,6 @@ with tab4:
         harga = model.predict(input_encoded)[0]
         st.success(f"💰 Perkiraan Harga: Rp {harga:,.0f}")
 
-        # Simpan log ke CSV
         hasil_log = input_df.copy()
         hasil_log["predicted_price"] = harga
         try:
@@ -123,7 +146,7 @@ with tab4:
         hasil_log.to_csv("riwayat_prediksi.csv", index=False)
         st.info("✅ Data prediksi telah disimpan ke riwayat_prediksi.csv")
 
-        # WhatsApp Message
+        # WhatsApp
         pesan = f"""Halo Admin, saya ingin menanyakan harga motor bekas:
 
 📌 Merek: {brand}
@@ -137,17 +160,24 @@ with tab4:
 
 Dikirim dari aplikasi Prediksi Harga Motor Beb.
 """
-        encoded_message = urllib.parse.quote(pesan)
-        no_wa = "6281234567890"  # Ganti dengan nomor WhatsApp kamu
-        wa_link = f"https://wa.me/{no_wa}?text={encoded_message}"
+        encoded = urllib.parse.quote(pesan)
+        wa_link = f"https://wa.me/6281234567890?text={encoded}"
 
         st.markdown(f"""
-            <a href="{wa_link}" target="_blank">
-                <button style='background-color:#25D366;color:white;padding:10px;border:none;border-radius:5px;font-size:16px'>
-                    📲 Kirim ke WhatsApp
-                </button>
-            </a>
+        <a href="{wa_link}" target="_blank">
+            <button style='background-color:#25D366;color:white;padding:10px;border:none;border-radius:5px;font-size:16px'>
+                📲 Kirim ke WhatsApp
+            </button>
+        </a>
         """, unsafe_allow_html=True)
 
+with tab5:
+    st.subheader("🗂️ Riwayat Prediksi Harga Motor")
+    try:
+        riwayat_df = pd.read_csv("riwayat_prediksi.csv")
+        st.dataframe(riwayat_df, use_container_width=True)
+    except FileNotFoundError:
+        st.warning("Belum ada riwayat prediksi.")
+
 st.markdown("---")
-st.caption("🚀 Dibuat dengan ❤️ oleh Papah Udin x Mamah Jaki with Akbar Junior")
+st.caption("🚀 Dibuat dengan ❤️ oleh Bos Beb")
